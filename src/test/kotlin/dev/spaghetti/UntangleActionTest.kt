@@ -51,14 +51,16 @@ class UntangleActionTest : SpaghettiTestCase() {
         assertEquals("Untangle Spaghetti", action.templatePresentation.text)
     }
 
-    fun testMenuEntryShowsOnHtmlOnly() {
+    fun testMenuEntryShowsOnHtmlCssAndJsOnly() {
         val html = myFixture.configureByText("page.html", "<html></html>").virtualFile
         val js = myFixture.configureByText("app.js", "var x = 1;").virtualFile
         val css = myFixture.configureByText("site.css", "a { color: red }").virtualFile
+        val py = myFixture.configureByText("script.py", "x = 1").virtualFile
 
         assertTrue(enabledFor(html))
-        assertFalse(enabledFor(js))
-        assertFalse(enabledFor(css))
+        assertTrue(enabledFor(js))
+        assertTrue(enabledFor(css))
+        assertFalse(enabledFor(py))
     }
 
     // ---- what happens on click -----------------------------------------------------------------
@@ -168,6 +170,52 @@ class UntangleActionTest : SpaghettiTestCase() {
         val applied = outcome as UntangleFlow.Outcome.Applied
         assertNotNull(file.parent.findFileByRelativePath("css/variables.css"))
         assertNotNull(file.parent.findFileByRelativePath("css/components/nav.css"))
+    }
+
+    // ---- standalone .css and .js dispatch through the same action -------------------------------
+
+    fun testRightClickingAStandaloneCssFileSplitsItViaImport() {
+        val css = """
+            /* ---------- nav ---------- */
+            ${(1..20).joinToString("\n") { "  .nav$it { color: red; }" }}
+            /* ---------- hero ---------- */
+            ${(1..20).joinToString("\n") { "  .hero$it { color: blue; }" }}
+        """.trimIndent()
+        val file = myFixture.configureByText("site.css", css).virtualFile
+
+        val outcome = UntangleFlow.runCss(project, file) { it }
+
+        val applied = outcome as UntangleFlow.Outcome.Applied
+        assertEquals(listOf("site/nav.css", "site/hero.css"), applied.plan.files.map { it.relativePath })
+        assertNotNull(file.parent.findFileByRelativePath("site/nav.css"))
+        assertTrue(String(file.contentsToByteArray()).contains("""@import url("site/nav.css");"""))
+    }
+
+    fun testRightClickingAClassicStandaloneJsFileIsDeclinedWithAReasonNotSilentlyIgnored() {
+        val js = (1..30).joinToString("\n") { "function f$it() { return $it; }" }
+        val file = myFixture.configureByText("classic.js", js).virtualFile
+
+        val outcome = UntangleFlow.runJs(project, file) { error("must not open a preview") }
+
+        assertTrue(outcome is UntangleFlow.Outcome.Declined)
+        assertEquals(js, String(file.contentsToByteArray())) // nothing touched
+    }
+
+    fun testRightClickingAnEligibleEntryPointJsFileSplitsItViaSideEffectImports() {
+        val js = """
+            import "./polyfill.js";
+            // toasts
+            ${(1..20).joinToString("\n") { "function toast$it() { return $it; }" }}
+            // theme
+            ${(1..20).joinToString("\n") { "function theme$it() { return $it; }" }}
+        """.trimIndent()
+        val file = myFixture.configureByText("main.js", js).virtualFile
+
+        val outcome = UntangleFlow.runJs(project, file) { it }
+
+        val applied = outcome as UntangleFlow.Outcome.Applied
+        assertEquals(listOf("main/toasts.js", "main/theme.js"), applied.plan.files.map { it.relativePath })
+        assertTrue(String(file.contentsToByteArray()).contains("""import "./main/toasts.js";"""))
     }
 
     // ---- undo ----------------------------------------------------------------------------------

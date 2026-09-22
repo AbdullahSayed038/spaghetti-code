@@ -8,6 +8,11 @@
         <p>AI tools love to generate an entire site in one giant <code>index.html</code>.
         Right-click it and choose <b>Untangle Spaghetti</b> to split the inline CSS and JavaScript
         into a clean folder structure, without changing how the page looks or behaves.</p>
+        <p>Works the same way on a standalone <code>.css</code> or <code>.js</code> file that has grown
+        too large — split at its own section comments, rewritten as <code>@import</code> or side-effect
+        <code>import</code> statements so nothing that already loads it needs to change. A classic
+        (non-module) script, or a module other files import symbols from, is left alone with an
+        explanation instead of a silent guess — see the plugin's README for why.</p>
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -22,7 +27,7 @@
         <action id="SpaghettiCode.Untangle"
                 class="dev.spaghetti.actions.UntangleAction"
                 text="Untangle Spaghetti"
-                description="Split this HTML file's inline CSS and JavaScript into separate files">
+                description="Split this file's inline (or, for a standalone .css/.js file, top-level) CSS and JavaScript into separate files">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
             <add-to-group group-id="EditorPopupMenu" anchor="first"/>
             <add-to-group group-id="ToolsMenu" anchor="first"/>

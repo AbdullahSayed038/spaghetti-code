@@ -1,8 +1,12 @@
 # 🍝 Spaghetti Code
 
 An IntelliJ plugin that untangles giant single-file code, the kind AI tools love to generate.
-Right-click a 3,000-line `index.html` (or a monster `app.js`), choose **Untangle Spaghetti**,
-pick one of three proposed layouts, and get a clean folder structure. Nothing is lost, and nothing changes behavior.
+Right-click a 3,000-line `index.html`, choose **Untangle Spaghetti**, pick one of three proposed
+layouts, and get a clean folder structure. Nothing is lost, and nothing changes behavior.
+
+It also works, more narrowly, on a standalone `.css` or `.js` file that has grown too large on its
+own — see [Standalone .css and .js files](#standalone-css-and-js-files) for exactly what it does and,
+just as importantly, what it deliberately declines to touch and why.
 
 Built for the 42 Abu Dhabi × JetBrains "Help the Developer" hackathon, September 22–23, 2026.
 
@@ -96,6 +100,41 @@ See [`tools/verify`](#prove-that-untangling-changed-nothing) for how "nothing ch
 
 ---
 
+## Standalone .css and .js files
+
+Right-click any `.html`, `.css` or `.js` file — the action detects which it is and runs the matching
+flow. The HTML case is everything above. The other two only work because each language happens to have
+a way to reference a sibling file that nothing else needs to know about:
+
+**`.css`** — split at its own top-level comments (`CssFileSplitter`, same `CommentSections` cutter as
+By feature), then the original file is rewritten to a short list of `@import url("...");` statements,
+in order. `@import` is standard CSS, always loads before other rules (trivially true here, since
+imports are now the *only* thing in the file), and loads in the order written — so any `<link
+href="app.css">` anywhere keeps working, completely unmodified, because `app.css` still exists. Nothing
+outside this one file has to change.
+
+**`.js`** — only in the one case that's actually safe: an ES module entry point that nothing else
+imports symbols *from*. `JsFileSplitter.checkEligibility` requires both:
+- at least one top-level `import`, meaning whatever loads it already uses `<script type="module">` —
+  the plugin isn't deciding to change how it's loaded, that was already decided;
+- **no** top-level `export`. If the file exported anything, some other file might do `import { thing }
+  from "./this.js"`, and splitting it apart re-assembled with `export *` can silently *drop* a name if
+  two pieces happen to export the same identifier — exactly the kind of silent behavior change this
+  plugin exists to prevent, so it declines rather than risk it.
+
+A file that fails either check gets a notification explaining exactly why, never a silent no-op and
+never a guess: a classic (non-module) script could be loaded by any number of pages the plugin has no
+way to check, and a module with exports could be depended on the same way. When it *is* eligible, the
+original file is rewritten to side-effect-only `import "./app/section.js";` statements, in the same
+order — this re-runs each piece's top-level code exactly once, in its original relative order, without
+re-exporting anything (there is nothing to re-export; the eligibility check already ruled that out).
+
+Both, like the HTML strategies, write every file from one block as a single tick/untick unit in the
+preview (`groupId`) and apply as one `WriteCommandAction` — one Ctrl+Z removes the split files and
+restores the original in one step.
+
+---
+
 ## Code map
 
 ```
@@ -111,6 +150,8 @@ src/main/kotlin/dev/spaghetti/
 │   ├── TypePlanner.kt       🗂️ strategy: same cuts, classified into variables/responsive/components/state/handlers
 │   ├── CommentSections.kt   the comment-boundary cutter both By feature and By type share
 │   ├── BlockPlanner.kt      turns one block's sections into grouped PlannedFiles + HTML edits
+│   ├── CssFileSplitter.kt   standalone .css file -> sections + @import rewrite
+│   ├── JsFileSplitter.kt    standalone .js file -> eligibility check, then sections + import rewrite
 │   ├── PlanPaths.kt         picks collision-free file paths
 │   ├── SplitPlan.kt         PlannedFile / SplitPlan / HtmlEdit — the language-neutral plan model
 │   └── PlanApplier.kt       writes the plan as one undoable WriteCommandAction
@@ -119,8 +160,10 @@ src/main/kotlin/dev/spaghetti/
     └── PreviewDialog.kt         tick/untick files (grouped files move together), then Apply
 
 src/main/resources/META-INF/plugin.xml   registers the action with IntelliJ
-src/test/kotlin/                         automated tests (88, see `gradlew test`), incl. edge cases and
-                                          10 distinct real-world-pattern pages (EdgeCaseTest, TenPagesRobustnessTest)
+src/test/kotlin/                         automated tests (104, see `gradlew test`), incl. edge cases,
+                                          10 distinct real-world-pattern pages (EdgeCaseTest,
+                                          TenPagesRobustnessTest) and the standalone .css/.js splitters
+                                          (CssFileSplitterTest, JsFileSplitterTest)
 src/test/testData/samples/               messy input files used by tests, incl. the Nimbus fixture
 tools/verify/                            before/after browser check — see below
 playground/                              a messy site to try the plugin on by hand
