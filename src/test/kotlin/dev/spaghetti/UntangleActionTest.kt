@@ -16,6 +16,7 @@ import dev.spaghetti.plan.LightPlanner
 import dev.spaghetti.plan.SplitPlan
 import dev.spaghetti.ui.PreviewDialog
 import dev.spaghetti.ui.StrategyPickerDialog
+import dev.spaghetti.ui.UntangleResultDialog
 
 /** Drives the same code the right-click menu runs, without the dialogs. */
 class UntangleActionTest : SpaghettiTestCase() {
@@ -265,6 +266,26 @@ class UntangleActionTest : SpaghettiTestCase() {
         val dialog = StrategyPickerDialog(project, "index.html", light, byFeature, byType)
         try {
             assertEquals(UntangleFlow.Strategy.BY_FEATURE, dialog.selectedStrategy())
+        } finally {
+            dialog.disposeIfNeeded()
+        }
+    }
+
+    fun testResultDialogDefaultsToNotRequestingASummary() {
+        val dialog = UntangleResultDialog(project, "Untangled index.html", "Created 3 file(s). Ctrl+Z undoes it.")
+        try {
+            assertFalse("closing any other way than the Summarize button must not trigger a summary", dialog.summarizeRequested)
+        } finally {
+            dialog.disposeIfNeeded()
+        }
+    }
+
+    fun testResultDialogHasASummarizeActionAndAClose() {
+        val dialog = UntangleResultDialog(project, "Untangled index.html", "Created 3 file(s). Ctrl+Z undoes it.")
+        try {
+            val labels = dialog.actionsForTest().map { it.getValue(javax.swing.Action.NAME) }
+            assertTrue(labels.contains("Summarize with AI"))
+            assertTrue(labels.contains("Close"))
         } finally {
             dialog.disposeIfNeeded()
         }

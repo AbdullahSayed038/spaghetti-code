@@ -1,6 +1,5 @@
 package dev.spaghetti.actions
 
-import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -13,6 +12,7 @@ import dev.spaghetti.ai.SummarizeCommand
 import dev.spaghetti.plan.SplitPlan
 import dev.spaghetti.ui.PreviewDialog
 import dev.spaghetti.ui.StrategyPickerDialog
+import dev.spaghetti.ui.UntangleResultDialog
 
 /**
  * Right-click an `.html`, `.css` or `.js` file -> "Untangle Spaghetti". Which of the three it is
@@ -57,21 +57,15 @@ class UntangleAction : AnAction() {
             UntangleFlow.Outcome.Cancelled -> Unit
             is UntangleFlow.Outcome.Applied -> {
                 val outputDir = virtualFile.parent
-                val notification = NotificationGroupManager.getInstance()
-                    .getNotificationGroup("Spaghetti Code")
-                    .createNotification(
-                        "Untangled ${virtualFile.name}",
-                        "Created ${outcome.plan.files.size} file(s): ${outcome.plan.files.joinToString { it.relativePath }}. Ctrl+Z undoes it.",
-                        NotificationType.INFORMATION,
-                    )
-                if (outputDir != null) {
-                    notification.addAction(
-                        NotificationAction.createSimple("Summarize with AI") {
-                            SummarizeCommand.run(project, outputDir, virtualFile.name, outcome.plan.files)
-                        },
-                    )
+                val dialog = UntangleResultDialog(
+                    project,
+                    "Untangled ${virtualFile.name}",
+                    "Created ${outcome.plan.files.size} file(s): ${outcome.plan.files.joinToString { it.relativePath }}. Ctrl+Z undoes it.",
+                )
+                dialog.show()
+                if (dialog.summarizeRequested && outputDir != null) {
+                    SummarizeCommand.run(project, outputDir, virtualFile.name, outcome.plan.files)
                 }
-                notification.notify(project)
             }
         }
     }
