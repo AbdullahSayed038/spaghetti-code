@@ -26,8 +26,17 @@ class SummaryPromptTest {
     }
 
     @Test
-    fun parseReadsAPlainJsonArrayInOrder() {
-        val response = """[{"path": "a.css", "summary": "Alpha styles."}, {"path": "b.js", "summary": "Beta logic."}]"""
+    fun responseSchemaPinsTheSummariesArrayToTheExactFileCount() {
+        val schema = SummaryPrompt.responseSchema(32)
+
+        val summaries = schema.getAsJsonObject("properties").getAsJsonObject("summaries")
+        assertEquals(32, summaries.get("minItems").asInt)
+        assertEquals(32, summaries.get("maxItems").asInt)
+    }
+
+    @Test
+    fun parseReadsSummariesByPositionInOrder() {
+        val response = """{"summaries": ["Alpha styles.", "Beta logic."]}"""
 
         val summaries = SummaryPrompt.parse(response, listOf("a.css", "b.js"))
 
@@ -36,7 +45,7 @@ class SummaryPromptTest {
 
     @Test
     fun parseStripsAMarkdownCodeFenceIfTheModelAddedOneAnyway() {
-        val response = "```json\n" + """[{"path": "a.css", "summary": "Alpha."}]""" + "\n```"
+        val response = "```json\n" + """{"summaries": ["Alpha."]}""" + "\n```"
 
         val summaries = SummaryPrompt.parse(response, listOf("a.css"))
 
@@ -44,8 +53,8 @@ class SummaryPromptTest {
     }
 
     @Test
-    fun parseIgnoresCommentaryBeforeAndAfterTheArray() {
-        val response = "Sure, here you go:\n" + """[{"path": "a.css", "summary": "Alpha."}]""" + "\nHope that helps!"
+    fun parseIgnoresCommentaryBeforeAndAfterTheObject() {
+        val response = "Sure, here you go:\n" + """{"summaries": ["Alpha."]}""" + "\nHope that helps!"
 
         val summaries = SummaryPrompt.parse(response, listOf("a.css"))
 
@@ -53,22 +62,21 @@ class SummaryPromptTest {
     }
 
     @Test
-    fun parseReturnsRequestedOrderEvenIfTheModelAnsweredOutOfOrder() {
-        val response = """[{"path": "b.js", "summary": "B."}, {"path": "a.css", "summary": "A."}]"""
-
-        val summaries = SummaryPrompt.parse(response, listOf("a.css", "b.js"))
-
-        assertEquals(listOf("a.css", "b.js"), summaries.map { it.path })
-    }
-
-    @Test
-    fun parseThrowsWithTheRawResponseWhenAPathIsMissing() {
-        val response = """[{"path": "a.css", "summary": "Alpha."}]"""
+    fun parseThrowsWithTheRawResponseWhenTheCountIsShort() {
+        val response = """{"summaries": ["Alpha."]}"""
 
         val ex = assertThrows(SummaryParseException::class.java) { SummaryPrompt.parse(response, listOf("a.css", "b.js")) }
 
-        assertTrue(ex.message!!.contains("b.js"))
+        assertTrue(ex.message!!.contains("2"))
+        assertTrue(ex.message!!.contains("1"))
         assertEquals(response, ex.rawResponse)
+    }
+
+    @Test
+    fun parseThrowsWhenTheCountIsTooMany() {
+        val response = """{"summaries": ["Alpha.", "Extra."]}"""
+
+        assertThrows(SummaryParseException::class.java) { SummaryPrompt.parse(response, listOf("a.css")) }
     }
 
     @Test
@@ -77,7 +85,12 @@ class SummaryPromptTest {
     }
 
     @Test
+    fun parseThrowsWhenTheSummariesKeyIsMissing() {
+        assertThrows(SummaryParseException::class.java) { SummaryPrompt.parse("""{"oops": []}""", listOf("a.css")) }
+    }
+
+    @Test
     fun parseThrowsWhenTheArrayIsEmptyButPathsWereRequested() {
-        assertThrows(SummaryParseException::class.java) { SummaryPrompt.parse("[]", listOf("a.css")) }
+        assertThrows(SummaryParseException::class.java) { SummaryPrompt.parse("""{"summaries": []}""", listOf("a.css")) }
     }
 }

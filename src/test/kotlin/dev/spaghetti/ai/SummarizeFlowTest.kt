@@ -10,9 +10,9 @@ class SummarizeFlowTest {
 
     @Test
     fun successBuildsAManifestFromTheModelsResponse() {
-        val canned = """[{"path": "css/nav.css", "summary": "Navigation bar."}, {"path": "js/toast.js", "summary": "Toast notifications."}]"""
+        val canned = """{"summaries": ["Navigation bar.", "Toast notifications."]}"""
 
-        val outcome = SummarizeFlow.run("index.html", files) { _, _ -> canned }
+        val outcome = SummarizeFlow.run("index.html", files) { _, _, _ -> canned }
 
         val success = outcome as SummarizeFlow.Outcome.Success
         assertEquals(listOf("css/nav.css", "js/toast.js"), success.summaries.map { it.path })
@@ -21,7 +21,7 @@ class SummarizeFlowTest {
 
     @Test
     fun aNetworkFailureBecomesAFailedOutcomeNotAnException() {
-        val outcome = SummarizeFlow.run("index.html", files) { _, _ -> throw OpenAiApiException("no internet") }
+        val outcome = SummarizeFlow.run("index.html", files) { _, _, _ -> throw OpenAiApiException("no internet") }
 
         val failed = outcome as SummarizeFlow.Outcome.Failed
         assertTrue(failed.reason.contains("no internet"))
@@ -29,7 +29,7 @@ class SummarizeFlowTest {
 
     @Test
     fun aMalformedResponseBecomesAFailedOutcomeWithTheReason() {
-        val outcome = SummarizeFlow.run("index.html", files) { _, _ -> "not json" }
+        val outcome = SummarizeFlow.run("index.html", files) { _, _, _ -> "not json" }
 
         val failed = outcome as SummarizeFlow.Outcome.Failed
         assertTrue(failed.reason.isNotBlank())
@@ -38,19 +38,26 @@ class SummarizeFlowTest {
     @Test
     fun noFilesIsFailedNotACrashOrAWastedApiCall() {
         var called = false
-        val outcome = SummarizeFlow.run("index.html", emptyList()) { _, _ -> called = true; "[]" }
+        val outcome = SummarizeFlow.run("index.html", emptyList()) { _, _, _ -> called = true; """{"summaries": []}""" }
 
         assertTrue(outcome is SummarizeFlow.Outcome.Failed)
         assertTrue("must not call the API when there is nothing to summarize", !called)
     }
 
     @Test
-    fun theRealSystemAndUserPromptsAreWhatGetsSentToComplete() {
+    fun theRealSystemAndUserPromptsAndExpectedCountAreWhatGetsSentToComplete() {
         var seenSystem: String? = null
         var seenUser: String? = null
-        SummarizeFlow.run("index.html", files) { system, user -> seenSystem = system; seenUser = user; "[]" }
+        var seenCount: Int? = null
+        SummarizeFlow.run("index.html", files) { system, user, expectedCount ->
+            seenSystem = system
+            seenUser = user
+            seenCount = expectedCount
+            """{"summaries": ["a", "b"]}"""
+        }
 
         assertEquals(SummaryPrompt.systemPrompt, seenSystem)
         assertEquals(SummaryPrompt.userPrompt(files), seenUser)
+        assertEquals(files.size, seenCount)
     }
 }

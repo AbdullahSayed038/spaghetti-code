@@ -31,7 +31,9 @@ object SummarizeCommand {
             override fun run(indicator: ProgressIndicator) {
                 indicator.isIndeterminate = true
                 val pairs = files.map { it.relativePath to it.content }
-                val outcome = SummarizeFlow.run(sourceFileName, pairs) { system, user -> OpenAiClient.complete(apiKey, system, user) }
+                val outcome = SummarizeFlow.run(sourceFileName, pairs) { system, user, expectedCount ->
+                    OpenAiClient.complete(apiKey, system, user, expectedCount)
+                }
                 when (outcome) {
                     is SummarizeFlow.Outcome.Success -> onSuccess(project, outputDir, outcome)
                     is SummarizeFlow.Outcome.Failed -> notify(project, "Couldn't summarize files", outcome.reason, NotificationType.WARNING)

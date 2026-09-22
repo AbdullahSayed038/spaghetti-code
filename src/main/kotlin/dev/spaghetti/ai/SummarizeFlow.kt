@@ -15,12 +15,12 @@ object SummarizeFlow {
         data class Failed(val reason: String) : Outcome
     }
 
-    /** @param complete (systemPrompt, userPrompt) -> the model's raw text reply. */
-    fun run(sourceFileName: String, files: List<Pair<String, String>>, complete: (system: String, user: String) -> String): Outcome {
+    /** @param complete (systemPrompt, userPrompt, expectedSummaryCount) -> the model's raw text reply. */
+    fun run(sourceFileName: String, files: List<Pair<String, String>>, complete: (system: String, user: String, expectedCount: Int) -> String): Outcome {
         if (files.isEmpty()) return Outcome.Failed("Nothing to summarize.")
 
         val responseText = try {
-            complete(SummaryPrompt.systemPrompt, SummaryPrompt.userPrompt(files))
+            complete(SummaryPrompt.systemPrompt, SummaryPrompt.userPrompt(files), files.size)
         } catch (e: Exception) {
             return Outcome.Failed(e.message ?: "Unknown error calling the API")
         }

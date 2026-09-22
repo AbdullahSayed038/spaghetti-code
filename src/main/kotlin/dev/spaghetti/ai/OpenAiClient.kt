@@ -20,8 +20,13 @@ object OpenAiClient {
     private const val ENDPOINT = "https://api.openai.com/v1/chat/completions"
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(15)).build()
 
-    /** @throws OpenAiApiException on any non-2xx response, a network failure, or a response with no text content. */
-    fun complete(apiKey: String, systemPrompt: String, userPrompt: String): String {
+    /**
+     * @param expectedSummaryCount Pins the response schema's `summaries` array to exactly this many
+     *   entries via OpenAI's structured-output strict mode, so the API itself -- not just the prompt
+     *   wording -- guarantees the model can't silently drop or duplicate a file's summary.
+     * @throws OpenAiApiException on any non-2xx response, a network failure, or a response with no text content.
+     */
+    fun complete(apiKey: String, systemPrompt: String, userPrompt: String, expectedSummaryCount: Int): String {
         val body = JsonObject().apply {
             addProperty("model", MODEL)
             add(
@@ -29,6 +34,20 @@ object OpenAiClient {
                 JsonArray().apply {
                     add(JsonObject().apply { addProperty("role", "system"); addProperty("content", systemPrompt) })
                     add(JsonObject().apply { addProperty("role", "user"); addProperty("content", userPrompt) })
+                },
+            )
+            add(
+                "response_format",
+                JsonObject().apply {
+                    addProperty("type", "json_schema")
+                    add(
+                        "json_schema",
+                        JsonObject().apply {
+                            addProperty("name", "file_summaries")
+                            addProperty("strict", true)
+                            add("schema", SummaryPrompt.responseSchema(expectedSummaryCount))
+                        },
+                    )
                 },
             )
         }
