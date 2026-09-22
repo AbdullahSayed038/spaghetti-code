@@ -1,5 +1,6 @@
 package dev.spaghetti.actions
 
+import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -8,6 +9,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import dev.spaghetti.ai.SummarizeCommand
 import dev.spaghetti.plan.SplitPlan
 import dev.spaghetti.ui.PreviewDialog
 import dev.spaghetti.ui.StrategyPickerDialog
@@ -53,12 +55,24 @@ class UntangleAction : AnAction() {
             is UntangleFlow.Outcome.Declined ->
                 notify(project, "Can't safely untangle ${virtualFile.name}", outcome.reason)
             UntangleFlow.Outcome.Cancelled -> Unit
-            is UntangleFlow.Outcome.Applied ->
-                notify(
-                    project,
-                    "Untangled ${virtualFile.name}",
-                    "Created ${outcome.plan.files.size} file(s): ${outcome.plan.files.joinToString { it.relativePath }}. Ctrl+Z undoes it.",
-                )
+            is UntangleFlow.Outcome.Applied -> {
+                val outputDir = virtualFile.parent
+                val notification = NotificationGroupManager.getInstance()
+                    .getNotificationGroup("Spaghetti Code")
+                    .createNotification(
+                        "Untangled ${virtualFile.name}",
+                        "Created ${outcome.plan.files.size} file(s): ${outcome.plan.files.joinToString { it.relativePath }}. Ctrl+Z undoes it.",
+                        NotificationType.INFORMATION,
+                    )
+                if (outputDir != null) {
+                    notification.addAction(
+                        NotificationAction.createSimple("Summarize with AI") {
+                            SummarizeCommand.run(project, outputDir, virtualFile.name, outcome.plan.files)
+                        },
+                    )
+                }
+                notification.notify(project)
+            }
         }
     }
 

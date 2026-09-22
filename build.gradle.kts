@@ -12,6 +12,8 @@ kotlin {
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
+    // For parsing the OpenAI API's JSON response in the AI-summary feature (dev.spaghetti.ai).
+    implementation("com.google.code.gson:gson:2.11.0")
 
     intellijPlatform {
         // Compile and test against the Maven (non-installer) build of IntelliJ IDEA.

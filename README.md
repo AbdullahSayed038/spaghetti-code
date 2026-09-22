@@ -135,6 +135,36 @@ restores the original in one step.
 
 ---
 
+## AI summary: "where do I look to change something?"
+
+After a successful untangle, the notification (and the persistent version of it under the bell icon)
+carries a **Summarize with AI** link. It is entirely optional, additive, and never runs on its own:
+
+- The untangle itself never touches AI. Code is cut and moved by the plugin's own parser only — this is
+  purely a description of files that already exist, generated after the fact.
+- Clicking it is the *only* time this plugin ever touches the network or asks for an API key. Never
+  clicking it, the plugin works forever offline. The key is checked in this order: the `OPENAI_API_KEY`
+  environment variable, then IntelliJ's encrypted `PasswordSafe` (never a plain file, never logged) —
+  and if neither exists, a one-time dialog asks for it and saves it for next time.
+- It runs as a background task (the UI never freezes on the network call) and writes `MANIFEST.md` next
+  to the split files: one line per file, in a table, saying what it's responsible for. A failure — no
+  internet, a bad key, a rate limit, a malformed reply — shows a clear reason and changes nothing; the
+  untangle that already happened is completely unaffected either way.
+
+```
+src/main/kotlin/dev/spaghetti/ai/
+├── SummaryPrompt.kt      builds the request text, parses the model's JSON reply -- pure, no network
+├── ManifestWriter.kt     renders MANIFEST.md -- pure text
+├── SummarizeFlow.kt      the above two wired together behind one injectable `complete` function,
+│                         so it's fully testable without ever calling the real API
+├── OpenAiClient.kt       the only class that actually makes an HTTP call (api.openai.com, gpt-4o-mini)
+├── ApiKeyStore.kt        env var, then PasswordSafe
+├── ApiKeyDialog.kt       the one-time "enter your key" prompt
+└── SummarizeCommand.kt   wires it all to a real project: background task, VFS write, notification
+```
+
+---
+
 ## Code map
 
 ```
@@ -160,10 +190,11 @@ src/main/kotlin/dev/spaghetti/
     └── PreviewDialog.kt         tick/untick files (grouped files move together), then Apply
 
 src/main/resources/META-INF/plugin.xml   registers the action with IntelliJ
-src/test/kotlin/                         automated tests (104, see `gradlew test`), incl. edge cases,
+src/test/kotlin/                         automated tests (121, see `gradlew test`), incl. edge cases,
                                           10 distinct real-world-pattern pages (EdgeCaseTest,
-                                          TenPagesRobustnessTest) and the standalone .css/.js splitters
-                                          (CssFileSplitterTest, JsFileSplitterTest)
+                                          TenPagesRobustnessTest), the standalone .css/.js splitters
+                                          (CssFileSplitterTest, JsFileSplitterTest) and the AI summary
+                                          feature (dev/spaghetti/ai/ -- all pure logic, no real API calls)
 src/test/testData/samples/               messy input files used by tests, incl. the Nimbus fixture
 tools/verify/                            before/after browser check — see below
 playground/                              a messy site to try the plugin on by hand
