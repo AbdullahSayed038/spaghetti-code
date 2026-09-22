@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Harbor | Admin dashboard</title>
+<style>
+:root {
+  --color-1: #0025f9;
+  --color-2: #004bf2;
+  --color-3: #0071eb;
+  --color-4: #0097e4;
+  --color-5: #00bddd;
+  --color-6: #00e3d6;
+  --color-7: #0109cf;
+  --color-8: #012fc8;
+  --color-9: #0155c1;
+  --color-10: #017bba;
+  --color-11: #01a1b3;
+  --color-12: #01c7ac;
+  --color-13: #01eda5;
+  --color-14: #02139e;
+  --color-15: #023997;
+  --color-16: #025f90;
+  --color-17: #028589;
+  --color-18: #02ab82;
+  --color-19: #02d17b;
+  --color-20: #02f774;
+}
+/* ---------- buttons ---------- */
+.btn-1 {
+  display: block;
+  padding: 2px;
+  margin: 1px auto;
+  color: #00100f;
+}
+.btn-2 {
+  display: block;
+  padding: 4px;
+  margin: 2px auto;
+  color: #00201e;
+}
+.btn-3 {
+  display: block;
+  padding: 6px;
+  margin: 3px auto;
+  color: #00302d;
+}
+.btn-4 {
+  display: block;
+  padding: 8px;
+  margin: 4px auto;
+  color: #00403c;
+}
+.btn-5 {
+  display: block;
+  padding: 10px;
+  margin: 5px auto;
+  color: #00504b;
+}
+.btn-6 {
+  display: block;
+  padding: 12px;
+  margin: 6px auto;
+  color: #00605a;
+}
+
+/* ---------- table ---------- */
+.row-1 {
+  display: block;
+  padding: 2px;
+  margin: 1px auto;
+  color: #00100f;
+}
+.row-2 {
+  display: block;
+  padding: 4px;
+  margin: 2px auto;
+  color: #00201e;
+}
+.row-3 {
+  display: block;
+  padding: 6px;
+  margin: 3px auto;
+  color: #00302d;
+}
+.row-4 {
+  display: block;
+  padding: 8px;
+  margin: 4px auto;
+  color: #00403c;
+}
+.row-5 {
+  display: block;
+  padding: 10px;
+  margin: 5px auto;
+  color: #00504b;
+}
+.row-6 {
+  display: block;
+  padding: 12px;
+  margin: 6px auto;
+  color: #00605a;
+}
+</style>
+</head><body>
+<table>
+  <tr><th onclick="sortColumn('name')">Name</th><th onclick="sortColumn('date')">Date</th></tr>
+  <tr><td>Invoice 214</td><td><button onclick="deleteRow(214)">Delete</button></td></tr>
+</table>
+<script>
+// handlers
+function sortColumn(name) {
+  console.log('sort', name);
+}
+
+function deleteRow(id) {
+  console.log('delete', id);
+}
+function pad1(x) {
+  console.log('pad1', x);
+  return x * 1;
+}
+function pad2(x) {
+  console.log('pad2', x);
+  return x * 2;
+}
+function pad3(x) {
+  console.log('pad3', x);
+  return x * 3;
+}
+function pad4(x) {
+  console.log('pad4', x);
+  return x * 4;
+}
+function pad5(x) {
+  console.log('pad5', x);
+  return x * 5;
+}
+function pad6(x) {
+  console.log('pad6', x);
+  return x * 6;
+}
+</script>
+</body></html>

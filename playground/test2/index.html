@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<title>Lumen | Analytics</title>
+<style>
+.sel-1 {
+  display: block;
+  padding: 2px;
+  margin: 1px auto;
+  color: #00100f;
+}
+.sel-2 {
+  display: block;
+  padding: 4px;
+  margin: 2px auto;
+  color: #00201e;
+}
+.sel-3 {
+  display: block;
+  padding: 6px;
+  margin: 3px auto;
+  color: #00302d;
+}
+.sel-4 {
+  display: block;
+  padding: 8px;
+  margin: 4px auto;
+  color: #00403c;
+}
+.sel-5 {
+  display: block;
+  padding: 10px;
+  margin: 5px auto;
+  color: #00504b;
+}
+.sel-6 {
+  display: block;
+  padding: 12px;
+  margin: 6px auto;
+  color: #00605a;
+}
+.sel-7 {
+  display: block;
+  padding: 14px;
+  margin: 7px auto;
+  color: #007069;
+}
+.sel-8 {
+  display: block;
+  padding: 16px;
+  margin: 8px auto;
+  color: #008078;
+}
+.sel-9 {
+  display: block;
+  padding: 18px;
+  margin: 9px auto;
+  color: #009087;
+}
+.sel-10 {
+  display: block;
+  padding: 20px;
+  margin: 10px auto;
+  color: #00a096;
+}
+.sel-11 {
+  display: block;
+  padding: 22px;
+  margin: 11px auto;
+  color: #00b0a5;
+}
+.sel-12 {
+  display: block;
+  padding: 24px;
+  margin: 12px auto;
+  color: #00c0b4;
+}
+.sel-13 {
+  display: block;
+  padding: 26px;
+  margin: 13px auto;
+  color: #00d0c3;
+}
+.sel-14 {
+  display: block;
+  padding: 28px;
+  margin: 14px auto;
+  color: #00e0d2;
+}
+.sel-15 {
+  display: block;
+  padding: 30px;
+  margin: 15px auto;
+  color: #00f0e1;
+}
+.sel-16 {
+  display: block;
+  padding: 32px;
+  margin: 16px auto;
+  color: #0100f0;
+}
+.sel-17 {
+  display: block;
+  padding: 34px;
+  margin: 17px auto;
+  color: #0110ff;
+}
+.sel-18 {
+  display: block;
+  padding: 36px;
+  margin: 18px auto;
+  color: #01210e;
+}
+.sel-19 {
+  display: block;
+  padding: 38px;
+  margin: 19px auto;
+  color: #01311d;
+}
+.sel-20 {
+  display: block;
+  padding: 40px;
+  margin: 20px auto;
+  color: #01412c;
+}
+.sel-21 {
+  display: block;
+  padding: 42px;
+  margin: 21px auto;
+  color: #01513b;
+}
+.sel-22 {
+  display: block;
+  padding: 44px;
+  margin: 22px auto;
+  color: #01614a;
+}
+.sel-23 {
+  display: block;
+  padding: 46px;
+  margin: 23px auto;
+  color: #017159;
+}
+.sel-24 {
+  display: block;
+  padding: 48px;
+  margin: 24px auto;
+  color: #018168;
+}
+.sel-25 {
+  display: block;
+  padding: 50px;
+  margin: 25px auto;
+  color: #019177;
+}
+.sel-26 {
+  display: block;
+  padding: 52px;
+  margin: 26px auto;
+  color: #01a186;
+}
+.sel-27 {
+  display: block;
+  padding: 54px;
+  margin: 27px auto;
+  color: #01b195;
+}
+.sel-28 {
+  display: block;
+  padding: 56px;
+  margin: 28px auto;
+  color: #01c1a4;
+}
+.sel-29 {
+  display: block;
+  padding: 58px;
+  margin: 29px auto;
+  color: #01d1b3;
+}
+.sel-30 {
+  display: block;
+  padding: 60px;
+  margin: 30px auto;
+  color: #01e1c2;
+}
+.sel-31 {
+  display: block;
+  padding: 62px;
+  margin: 31px auto;
+  color: #01f1d1;
+}
+.sel-32 {
+  display: block;
+  padding: 64px;
+  margin: 32px auto;
+  color: #0201e0;
+}
+.sel-33 {
+  display: block;
+  padding: 66px;
+  margin: 33px auto;
+  color: #0211ef;
+}
+.sel-34 {
+  display: block;
+  padding: 68px;
+  margin: 34px auto;
+  color: #0221fe;
+}
+.sel-35 {
+  display: block;
+  padding: 70px;
+  margin: 35px auto;
+  color: #02320d;
+}
+.sel-36 {
+  display: block;
+  padding: 72px;
+  margin: 36px auto;
+  color: #02421c;
+}
+.sel-37 {
+  display: block;
+  padding: 74px;
+  margin: 37px auto;
+  color: #02522b;
+}
+.sel-38 {
+  display: block;
+  padding: 76px;
+  margin: 38px auto;
+  color: #02623a;
+}
+.sel-39 {
+  display: block;
+  padding: 78px;
+  margin: 39px auto;
+  color: #027249;
+}
+.sel-40 {
+  display: block;
+  padding: 80px;
+  margin: 40px auto;
+  color: #028258;
+}
+.sel-41 {
+  display: block;
+  padding: 82px;
+  margin: 41px auto;
+  color: #029267;
+}
+.sel-42 {
+  display: block;
+  padding: 84px;
+  margin: 42px auto;
+  color: #02a276;
+}
+.sel-43 {
+  display: block;
+  padding: 86px;
+  margin: 43px auto;
+  color: #02b285;
+}
+.sel-44 {
+  display: block;
+  padding: 88px;
+  margin: 44px auto;
+  color: #02c294;
+}
+.sel-45 {
+  display: block;
+  padding: 90px;
+  margin: 45px auto;
+  color: #02d2a3;
+}
+.sel-46 {
+  display: block;
+  padding: 92px;
+  margin: 46px auto;
+  color: #02e2b2;
+}
+.sel-47 {
+  display: block;
+  padding: 94px;
+  margin: 47px auto;
+  color: #02f2c1;
+}
+.sel-48 {
+  display: block;
+  padding: 96px;
+  margin: 48px auto;
+  color: #0302d0;
+}
+.sel-49 {
+  display: block;
+  padding: 98px;
+  margin: 49px auto;
+  color: #0312df;
+}
+.sel-50 {
+  display: block;
+  padding: 100px;
+  margin: 50px auto;
+  color: #0322ee;
+}
+.sel-51 {
+  display: block;
+  padding: 102px;
+  margin: 51px auto;
+  color: #0332fd;
+}
+.sel-52 {
+  display: block;
+  padding: 104px;
+  margin: 52px auto;
+  color: #03430c;
+}
+.sel-53 {
+  display: block;
+  padding: 106px;
+  margin: 53px auto;
+  color: #03531b;
+}
+.sel-54 {
+  display: block;
+  padding: 108px;
+  margin: 54px auto;
+  color: #03632a;
+}
+.sel-55 {
+  display: block;
+  padding: 110px;
+  margin: 55px auto;
+  color: #037339;
+}
+.sel-56 {
+  display: block;
+  padding: 112px;
+  margin: 56px auto;
+  color: #038348;
+}
+.sel-57 {
+  display: block;
+  padding: 114px;
+  margin: 57px auto;
+  color: #039357;
+}
+.sel-58 {
+  display: block;
+  padding: 116px;
+  margin: 58px auto;
+  color: #03a366;
+}
+.sel-59 {
+  display: block;
+  padding: 118px;
+  margin: 59px auto;
+  color: #03b375;
+}
+.sel-60 {
+  display: block;
+  padding: 120px;
+  margin: 60px auto;
+  color: #03c384;
+}
+</style>
+</head><body>
+<h1>Lumen Analytics</h1>
+<p>Realtime dashboards, no fuss.</p>
+<script>
+function util1(x) {
+  console.log('util1', x);
+  return x * 1;
+}
+function util2(x) {
+  console.log('util2', x);
+  return x * 2;
+}
+function util3(x) {
+  console.log('util3', x);
+  return x * 3;
+}
+function util4(x) {
+  console.log('util4', x);
+  return x * 4;
+}
+function util5(x) {
+  console.log('util5', x);
+  return x * 5;
+}
+function util6(x) {
+  console.log('util6', x);
+  return x * 6;
+}
+function util7(x) {
+  console.log('util7', x);
+  return x * 7;
+}
+function util8(x) {
+  console.log('util8', x);
+  return x * 8;
+}
+function util9(x) {
+  console.log('util9', x);
+  return x * 9;
+}
+function util10(x) {
+  console.log('util10', x);
+  return x * 10;
+}
+function util11(x) {
+  console.log('util11', x);
+  return x * 11;
+}
+function util12(x) {
+  console.log('util12', x);
+  return x * 12;
+}
+function util13(x) {
+  console.log('util13', x);
+  return x * 13;
+}
+function util14(x) {
+  console.log('util14', x);
+  return x * 14;
+}
+function util15(x) {
+  console.log('util15', x);
+  return x * 15;
+}
+function util16(x) {
+  console.log('util16', x);
+  return x * 16;
+}
+function util17(x) {
+  console.log('util17', x);
+  return x * 17;
+}
+function util18(x) {
+  console.log('util18', x);
+  return x * 18;
+}
+function util19(x) {
+  console.log('util19', x);
+  return x * 19;
+}
+function util20(x) {
+  console.log('util20', x);
+  return x * 20;
+}
+function util21(x) {
+  console.log('util21', x);
+  return x * 21;
+}
+function util22(x) {
+  console.log('util22', x);
+  return x * 22;
+}
+function util23(x) {
+  console.log('util23', x);
+  return x * 23;
+}
+function util24(x) {
+  console.log('util24', x);
+  return x * 24;
+}
+function util25(x) {
+  console.log('util25', x);
+  return x * 25;
+}
+function util26(x) {
+  console.log('util26', x);
+  return x * 26;
+}
+function util27(x) {
+  console.log('util27', x);
+  return x * 27;
+}
+function util28(x) {
+  console.log('util28', x);
+  return x * 28;
+}
+function util29(x) {
+  console.log('util29', x);
+  return x * 29;
+}
+function util30(x) {
+  console.log('util30', x);
+  return x * 30;
+}
+</script>
+</body></html>
