@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Untangle check: running</title>
+<style>
+  body { font: 14px/1.5 system-ui, sans-serif; margin: 24px; max-width: 900px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .verdict { font-size: 18px; font-weight: 600; margin: 12px 0; }
+  .pass { color: #0a7d33; } .fail { color: #c62828; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+  td, th { text-align: left; padding: 4px 10px; border-bottom: 1px solid #ddd; vertical-align: top; }
+  code { font-size: 12px; }
+  iframe { position: absolute; left: -10000px; top: 0; width: 1280px; height: 900px; border: 0; }
+</style>
+</head>
+<body>
+<h1>Untangle before / after check</h1>
+<div id="sub"></div>
+<div id="verdict" class="verdict">Running...</div>
+<table id="rows"></table>
+<pre id="details"></pre>
+<iframe id="before"></iframe>
+<iframe id="after"></iframe>
+
+<script>
+const page = new URLSearchParams(location.search).get("page") || "index";
+document.getElementById("sub").textContent = `Comparing before/${page}.html with after/${page}.html, both loaded at 1280x900.`;
+
+const loadFrame = (frame, src) => new Promise(resolve => { frame.onload = () => resolve(); frame.src = src; });
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// The list of every CSS rule the browser ended up with, in cascade order. Cross-origin sheets (fonts) are skipped identically on both sides.
+function flatRules(win) {
+  const rules = [];
+  for (const sheet of win.document.styleSheets) {
+    try { for (const rule of sheet.cssRules) rules.push(rule.cssText); } catch (e) { /* cross-origin */ }
+  }
+  return rules;
+}
+
+// Stop animations and transitions so the two pages are compared at rest, not mid-animation.
+function freeze(win) {
+  const style = win.document.createElement("style");
+  style.textContent = "*, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }";
+  win.document.head.appendChild(style);
+}
+
+// style/link/script never render, and untangling legitimately changes how many of them there are (5 <style> become 1 <link>).
+const NON_RENDERED = "style, link, script, meta, title, noscript, template";
+
+function snapshot(win) {
+  const doc = win.document;
+  return [...doc.querySelectorAll("*")].filter(el => !el.matches(NON_RENDERED)).map(el => {
+    const cs = win.getComputedStyle(el);
+    const props = {};
+    for (const p of cs) props[p] = cs.getPropertyValue(p);
+    const r = el.getBoundingClientRect();
+    props["@box"] = [r.x, r.y, r.width, r.height].map(v => Math.round(v)).join(",");
+    return { label: el.tagName.toLowerCase() + (el.id ? "#" + el.id : "") + (el.classList.length ? "." + [...el.classList].join(".") : ""), props };
+  });
+}
+
+// Every function named in an inline on...="" attribute must exist as a global.
+function inlineHandlers(win) {
+  const names = new Set(), missing = new Set();
+  let count = 0;
+  for (const el of win.document.querySelectorAll("*")) {
+    for (const attr of el.attributes) {
+      if (!/^on[a-z]+$/.test(attr.name)) continue;
+      count++;
+      for (const m of attr.value.matchAll(/([A-Za-z_$][\w$]*)\s*\(/g)) {
+        const name = m[1];
+        if (["if", "for", "while", "return", "function", "event"].includes(name)) continue;
+        names.add(name);
+        if (typeof win[name] !== "function" && !(name in win.Object.prototype) && !/^(document|window|this|console|Math|Date|JSON|localStorage|history|location)$/.test(name)) missing.add(name);
+      }
+    }
+  }
+  return { count, names: [...names], missing: [...missing] };
+}
+
+function stylesheetHrefs(win) {
+  return [...win.document.styleSheets].map(s => s.href || "(inline)");
+}
+
+(async () => {
+  const bf = document.getElementById("before"), af = document.getElementById("after");
+  await Promise.all([loadFrame(bf, `/before/${page}.html`), loadFrame(af, `/after/${page}.html`)]);
+  await sleep(2500);
+  const B = bf.contentWindow, A = af.contentWindow;
+
+  const rows = [];
+  const details = [];
+  const check = (name, ok, info) => rows.push({ name, ok, info });
+
+  // 1. Cascade: identical rules in identical order.
+  const rb = flatRules(B), ra = flatRules(A);
+  let firstRuleDiff = -1;
+  for (let i = 0; i < Math.max(rb.length, ra.length); i++) if (rb[i] !== ra[i]) { firstRuleDiff = i; break; }
+  check("CSS rules identical and in the same order", firstRuleDiff === -1 && rb.length > 0,
+    `${rb.length} rules before, ${ra.length} after` + (firstRuleDiff >= 0 ? `; first difference at rule #${firstRuleDiff}` : ""));
+  if (firstRuleDiff >= 0) details.push(`rule #${firstRuleDiff}\n  before: ${rb[firstRuleDiff]}\n  after:  ${ra[firstRuleDiff]}`);
+
+  // 2. Globals: everything defined before is still defined.
+  const gb = new Set(Object.getOwnPropertyNames(B)), ga = new Set(Object.getOwnPropertyNames(A));
+  const lost = [...gb].filter(n => !ga.has(n)), gained = [...ga].filter(n => !gb.has(n));
+  check("Every global from before still exists", lost.length === 0, `${gb.size} globals before, ${ga.size} after` + (lost.length ? `; lost: ${lost.join(", ")}` : "") + (gained.length ? `; new: ${gained.join(", ")}` : ""));
+
+  // 3. Inline onclick etc. still resolve.
+  const hb = inlineHandlers(B), ha = inlineHandlers(A);
+  check("Every inline on...=\"\" handler resolves", ha.missing.length === 0,
+    `${ha.count} handlers calling ${ha.names.length} functions (before: ${hb.count}/${hb.names.length})` + (ha.missing.length ? `; missing: ${ha.missing.join(", ")}` : ""));
+
+  // 4. The new files actually loaded.
+  const hrefs = stylesheetHrefs(A);
+  check("Extracted stylesheet was loaded", hrefs.some(h => h.includes("/css/")) , hrefs.filter(h => h.includes("/css/")).join(", ") || "no /css/ stylesheet found");
+
+  // 5. Rendering: computed style + position of every element, at rest.
+  freeze(B); freeze(A);
+  await sleep(300);
+  const sb = snapshot(B), sa = snapshot(A);
+  let differing = 0, propDiffs = 0;
+  if (sb.length !== sa.length) {
+    check("Same number of rendered elements", false, `${sb.length} before, ${sa.length} after`);
+  } else {
+    check("Same number of rendered elements", true, `${sb.length}`);
+    for (let i = 0; i < sb.length; i++) {
+      const diffs = [];
+      for (const p in sb[i].props) if (sb[i].props[p] !== sa[i].props[p]) diffs.push(`${p}: ${sb[i].props[p]} -> ${sa[i].props[p]}`);
+      if (diffs.length) {
+        differing++; propDiffs += diffs.length;
+        if (details.length < 12) details.push(`${sb[i].label}\n  ` + diffs.slice(0, 4).join("\n  "));
+      }
+    }
+    check("Computed style and position identical for every element", differing === 0, `${differing} of ${sb.length} elements differ (${propDiffs} property differences)`);
+  }
+
+  const allOk = rows.every(r => r.ok);
+  document.title = "Untangle check: " + (allOk ? "PASS" : "FAIL") + " (" + page + ")";
+  const verdict = document.getElementById("verdict");
+  verdict.textContent = allOk ? "PASS: nothing changed" : "FAIL: something changed";
+  verdict.className = "verdict " + (allOk ? "pass" : "fail");
+  document.getElementById("rows").innerHTML = rows.map(r =>
+    `<tr><td class="${r.ok ? "pass" : "fail"}">${r.ok ? "PASS" : "FAIL"}</td><td>${r.name}</td><td><code>${r.info}</code></td></tr>`).join("");
+  document.getElementById("details").textContent = details.join("\n\n");
+  window.__result = { page, allOk, rows, details };
+})();
+</script>
+</body>
+</html>

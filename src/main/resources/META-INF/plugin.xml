@@ -1,0 +1,31 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <id>dev.spaghetti.code</id>
+    <name>Spaghetti Code</name>
+    <vendor>Spaghetti Code Team</vendor>
+    <description><![CDATA[
+        <p><b>Spaghetti Code</b> untangles single-file websites.</p>
+        <p>AI tools love to generate an entire site in one giant <code>index.html</code>.
+        Right-click it and choose <b>Untangle Spaghetti</b> to split the inline CSS and JavaScript
+        into a clean folder structure, without changing how the page looks or behaves.</p>
+    ]]></description>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.css</depends>
+    <depends>JavaScript</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Spaghetti Code" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <action id="SpaghettiCode.Untangle"
+                class="dev.spaghetti.actions.UntangleAction"
+                text="Untangle Spaghetti"
+                description="Split this HTML file's inline CSS and JavaScript into separate files">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+            <add-to-group group-id="ToolsMenu" anchor="first"/>
+        </action>
+    </actions>
+</idea-plugin>
