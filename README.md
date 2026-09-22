@@ -83,10 +83,12 @@ Right-click file (or Tools menu) -> Untangle Spaghetti
    at the same relative position. Filenames come from the code's own comments, not AI, and not a rewrite.
 2. **Don't fix what isn't broken.** Blocks under ~15 lines (`LightPlanner.MIN_LINES` /
    `CommentSections.MIN_LINES`) stay where they are, or get folded into a bigger neighboring section.
-3. **Behavior must not change.** CSS keeps its cascade order (a run only merges across blocks with
-   nothing — no other stylesheet, no skipped `<style>` — between them), scripts keep their load order
-   and stay classic `<script>` tags (not `type="module"`, which `file://` refuses to load), and anything
-   with an unusual attribute, `@import`, or non-JS `type` is left inline.
+3. **Behavior must not change.** CSS keeps its cascade order — a run of `<style>` blocks only merges when
+   there is *nothing* between them: no other stylesheet, no skipped `<style>`, and no `<script>` either
+   (merging across a script wouldn't change the final cascade, but the script could read computed style or
+   layout at that exact point in parsing, and merging would change what it sees then). Scripts keep their
+   load order and stay classic `<script>` tags (not `type="module"`, which `file://` refuses to load), and
+   anything with an unusual attribute, `@import`, or non-JS `type` is left inline.
 4. **The user is always in control.** Nothing is written until they pick a strategy, review the file
    list, and press Untangle. One Ctrl+Z undoes everything, extracted files included.
 
@@ -117,7 +119,8 @@ src/main/kotlin/dev/spaghetti/
     └── PreviewDialog.kt         tick/untick files (grouped files move together), then Apply
 
 src/main/resources/META-INF/plugin.xml   registers the action with IntelliJ
-src/test/kotlin/                         automated tests (57, see `gradlew test`)
+src/test/kotlin/                         automated tests (88, see `gradlew test`), incl. edge cases and
+                                          10 distinct real-world-pattern pages (EdgeCaseTest, TenPagesRobustnessTest)
 src/test/testData/samples/               messy input files used by tests, incl. the Nimbus fixture
 tools/verify/                            before/after browser check — see below
 playground/                              a messy site to try the plugin on by hand

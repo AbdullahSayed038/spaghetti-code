@@ -60,7 +60,9 @@ class FeaturePlannerTest : SpaghettiTestCase() {
 
         val cssGroups = plan.files.filter { it.relativePath.startsWith("css/") }.map { it.groupId }.distinct()
         val jsGroups = plan.files.filter { it.relativePath.startsWith("js/") }.map { it.groupId }.distinct()
-        assertEquals("Nimbus has one run of style blocks", 1, cssGroups.size)
+        // 5 <style> blocks, but a <script> sits between some of them (JSON-LD, the pricing script), so
+        // there are 3 cascade-safe runs, not 1: merging across a script could change what it observes.
+        assertEquals("Nimbus's <style> blocks split into 3 cascade-safe runs", 3, cssGroups.size)
         assertEquals("Nimbus has two big scripts, so two separate groups", 2, jsGroups.size)
         assertTrue(cssGroups.all { it != null })
         assertTrue(jsGroups.all { it != null })

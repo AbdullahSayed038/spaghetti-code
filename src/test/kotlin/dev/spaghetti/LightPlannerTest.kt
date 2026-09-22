@@ -20,13 +20,15 @@ class LightPlannerTest : SpaghettiTestCase() {
 
     // ---- the big AI-generated page -------------------------------------------------------------
 
-    fun testNimbusMergesFiveStyleBlocksAndExtractsTwoBigScripts() {
+    fun testNimbusMergesStyleBlocksIntoThreeCascadeSafeRunsAndExtractsTwoBigScripts() {
         val file = myFixture.configureByFile("samples/nimbus/index.html") as XmlFile
 
         val plan = LightPlanner.plan(file)
 
+        // 5 <style> blocks, but a <script> (JSON-LD after block 1, the pricing script after block 3) sits
+        // between some of them, so the cascade-safe merge is 3 runs, not 1: [1], [2,3], [4,5].
         assertEquals(
-            listOf("css/styles.css", "js/pricing-logic.js", "js/main-app.js"),
+            listOf("css/styles.css", "css/styles-2.css", "css/styles-3.css", "js/pricing-logic.js", "js/main-app.js"),
             plan.files.map { it.relativePath },
         )
     }
@@ -36,15 +38,15 @@ class LightPlannerTest : SpaghettiTestCase() {
         val blocks = InlineBlockScanner.scan(file)
         val plan = LightPlanner.plan(file)
 
-        // Every extracted <style> block appears in styles.css, once, in the original order.
-        val mergedCss = squash(plan.files.first { it.relativePath == "css/styles.css" }.content)
+        // Every extracted <style> block appears somewhere across the css/ files, once, in the original order.
+        val mergedCss = plan.files.filter { it.relativePath.startsWith("css/") }.joinToString("") { squash(it.content) }
         var from = 0
         for (block in blocks.filter { it.kind == InlineBlock.Kind.STYLE }) {
             val at = mergedCss.indexOf(squash(block.code), from)
-            assertTrue("a <style> block is missing or out of order in styles.css", at >= 0)
+            assertTrue("a <style> block is missing or out of order across the css/ files", at >= 0)
             from = at + squash(block.code).length
         }
-        assertEquals("styles.css contains something that was not in the page", from, mergedCss.length)
+        assertEquals("the css/ files contain something that was not in the page", from, mergedCss.length)
 
         // Each extracted script is byte-for-byte the original code (only outer blank lines trimmed).
         for (path in listOf("js/pricing-logic.js", "js/main-app.js")) {
@@ -74,6 +76,8 @@ class LightPlannerTest : SpaghettiTestCase() {
             scriptTags(html),
         )
         assertTrue(html.contains("""<link rel="stylesheet" href="css/styles.css">"""))
+        assertTrue(html.contains("""<link rel="stylesheet" href="css/styles-2.css">"""))
+        assertTrue(html.contains("""<link rel="stylesheet" href="css/styles-3.css">"""))
         assertTrue(html.contains("""<script src="js/pricing-logic.js"></script>"""))
         assertTrue(html.contains("""<script src="js/main-app.js"></script>"""))
         // untouched: theme bootstrap, JSON-LD, external confetti, the one-line year script

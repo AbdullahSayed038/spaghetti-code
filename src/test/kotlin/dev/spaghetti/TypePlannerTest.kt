@@ -131,8 +131,14 @@ class TypePlannerTest : SpaghettiTestCase() {
         val file = myFixture.configureByFile("samples/nimbus/index.html") as XmlFile
         val plan = TypePlanner.plan(file, project)
 
-        val cssGroupId = plan.files.first { it.relativePath.startsWith("css/") }.groupId
-        assertNotNull(cssGroupId)
-        assertTrue(plan.files.filter { it.relativePath.startsWith("css/") }.all { it.groupId == cssGroupId })
+        // Nimbus's 5 <style> blocks split into 3 cascade-safe runs (a <script> sits between some of them),
+        // so there are 3 css groups, not 1 -- but every file must belong to exactly one, and every group
+        // must have a non-null id (an ungrouped file would mean an unprotected, independently-tickable edit).
+        val cssFiles = plan.files.filter { it.relativePath.startsWith("css/") }
+        assertTrue(cssFiles.isNotEmpty())
+        assertTrue("every css file must belong to a group", cssFiles.all { it.groupId != null })
+        val groups = cssFiles.groupBy { it.groupId }
+        assertEquals("3 cascade-safe runs -> 3 groups", 3, groups.size)
+        assertTrue("every group must have at least one file", groups.values.all { it.isNotEmpty() })
     }
 }

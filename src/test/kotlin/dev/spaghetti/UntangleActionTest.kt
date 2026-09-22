@@ -114,7 +114,7 @@ class UntangleActionTest : SpaghettiTestCase() {
         val outcome = runPickingLight(file) { it }
 
         val applied = outcome as UntangleFlow.Outcome.Applied
-        assertEquals(3, applied.plan.files.size)
+        assertEquals(5, applied.plan.files.size) // 3 cascade-safe css runs (a script splits them) + 2 scripts
         assertNotNull(file.parent.findFileByRelativePath("css/styles.css"))
         assertNotNull(file.parent.findFileByRelativePath("js/main-app.js"))
         assertTrue(String(file.contentsToByteArray()).contains("""<link rel="stylesheet" href="css/styles.css">"""))
@@ -134,7 +134,7 @@ class UntangleActionTest : SpaghettiTestCase() {
         )
 
         val (light, byFeature, byType) = seen!!
-        assertEquals(3, light.files.size)
+        assertEquals(5, light.files.size) // 3 cascade-safe css runs (a script splits them) + 2 scripts
         assertTrue("By feature should produce far more files than Light", byFeature.files.size > light.files.size)
         assertTrue("By type should also subdivide the file", byType.files.size > light.files.size)
         assertTrue(byType.files.any { it.relativePath == "css/variables.css" })

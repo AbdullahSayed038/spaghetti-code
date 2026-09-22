@@ -61,7 +61,10 @@ object LightPlanner {
     /**
      * Runs of `<style>` blocks that sit next to each other in the cascade, in document order. A run ends
      * wherever another stylesheet, or a `<style>` we are leaving alone, sits between two blocks, because
-     * merging across it would change which rule wins.
+     * merging across it would change which rule wins. A run also ends at any `<script>`, extracted or not:
+     * merging never changes the *final* cascade, but a script sitting between two style blocks could read
+     * computed style or layout at that exact point in parsing, and merging would change what it sees then,
+     * even though the page looks identical once everything has loaded.
      */
     internal fun findStyleRuns(file: XmlFile): List<List<XmlTag>> {
         val runs = mutableListOf<MutableList<XmlTag>>()
@@ -72,7 +75,7 @@ object LightPlanner {
                     if (current == null) current = mutableListOf<XmlTag>().also { runs += it }
                     current.add(tag)
                 }
-                tag.name.equals("style", ignoreCase = true) || isStylesheetLink(tag) -> current = null
+                tag.name.equals("style", ignoreCase = true) || tag.name.equals("script", ignoreCase = true) || isStylesheetLink(tag) -> current = null
             }
         }
         return runs
